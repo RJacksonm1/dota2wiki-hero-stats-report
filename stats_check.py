@@ -31,10 +31,32 @@ def main():
 
         # Do comparisons
         def compare(tuple1, tuple2):
+            special_cases = ["armor", "missile speed", "damage max", "damage min"]
             k1, v1 = tuple1
             k2, v2 = tuple2
+            if k1 not in special_cases:
+                return (float(v1) == float(v2)), tuple1, tuple2
+            else:
+                if k1 == "armor":
+                    # Wiki has armor specified with Agi calculated in.
+                    agi_boost = 0.14 * int(vdf_hero_data["AttributeBaseAgility"])
+                    return (float(v1) == (float(v2) + agi_boost)), tuple1, (k2, float(v2) + agi_boost)
+                elif k1 == "missile speed":
+                    if v1 == -1 and vdf_hero_data.get("ProjectileSpeed") in [0, None, ""]:
+                        # If we don't have a value listed on Wiki and it is set to 0 or not set at all, treat as a match.
+                        return True, tuple1, tuple2
+                    else:
+                        return (float(v1) == float(v2)), tuple1, tuple2
+                elif k1 == "damage min" or k1 == "damage max":
+                    # Wiki has damage with primary attr damage calcualted in.
+                    if vdf_hero_data["AttributePrimary"] == "DOTA_ATTRIBUTE_AGILITY":
+                        primary_attr_dmg = int(vdf_hero_data["AttributeBaseAgility"])
+                    elif vdf_hero_data["AttributePrimary"] == "DOTA_ATTRIBUTE_STRENGTH":
+                        primary_attr_dmg = int(vdf_hero_data["AttributeBaseStrength"])
+                    else:
+                        primary_attr_dmg = int(vdf_hero_data["AttributeBaseIntelligence"])
 
-            return (v1 == v2), tuple1, tuple2
+                    return (float(v1) == (float(v2) + primary_attr_dmg)), tuple1, (k2, float(v2) + primary_attr_dmg)
 
         for a, b in [
             # ("attack backswing",    ""),  # Not sure where this data is from.
@@ -59,7 +81,7 @@ def main():
             ("turn rate",           "MovementTurnRate"),
         ]:
 
-            val1 = params[a] if a in params else "-"  # If we don't use this attr in the Wiki replace with a dash
+            val1 = params[a] if a in params else -1  # If we don't use this attr in the Wiki replace with -1
             val2 = vdf_hero_data.get(b, vdf_base_data.get(b))  # Fall back to npc_dota_hero_base if attr not defined in hero spec.
             report_data[hero["localized_name"]].append(compare((a, val1), (b, val2)))
 
