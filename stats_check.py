@@ -17,11 +17,15 @@ def main():
 
     report_data = {}
     for hero in heroes:
-        print(hero)
-        report_data[hero["localized_name"]] = []
+        print("Parsing {}".format(hero["localized_name"]))
+        report_data[hero["localized_name"]] = []  # Set up array for hero attribute tuples
+
+        # Data from Wiki
         text = page.Page(w, title=hero["localized_name"]).getWikiText()
         infobox_params = infobox_re.search(text).group(1)
         params = {k.lower(): v for k, v in param_re.findall(infobox_params)}
+
+        # Data from npc_heroes.txt
         vdf_base_data = hero_data["npc_dota_hero_base"]
         vdf_hero_data = hero_data[hero["name"]]
 
@@ -55,8 +59,8 @@ def main():
             ("turn rate",           "MovementTurnRate"),
         ]:
 
-            val1 = params[a] if a in params else "-"
-            val2 = vdf_hero_data.get(b, vdf_base_data.get(b))
+            val1 = params[a] if a in params else "-"  # If we don't use this attr in the Wiki replace with a dash
+            val2 = vdf_hero_data.get(b, vdf_base_data.get(b))  # Fall back to npc_dota_hero_base if attr not defined in hero spec.
             report_data[hero["localized_name"]].append(compare((a, val1), (b, val2)))
 
     report_to_wicky(w, report_data)
@@ -79,7 +83,7 @@ def report_to_wicky(w, report_data):
 |-
 """.format(hero_name)
         for t in report_data[hero_name]:
-            data = (hero_name, t[1][0], t[1][1], t[2][1], " style='background:" + ("green" if t[0] is True else "red") + "' | " + str(t[0]))
+            data = (hero_name, t[1][0], t[1][1], t[2][1], " style='background:" + ("" if t[0] is True else "red") + "' | " + str(t[0]))
             text += """| {0}
 | {1}
 | {2}
